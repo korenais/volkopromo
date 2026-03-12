@@ -18,19 +18,25 @@ type Product = {
   promo_dates: string;
 };
 
-type Brand = {
-  brand: string;
+type FilterOption = {
+  brand?: string;
+  supermarket?: string;
+  promo_dates?: string;
   count: number;
 };
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
+  const [brands, setBrands] = useState<FilterOption[]>([]);
+  const [supermarkets, setSupermarkets] = useState<FilterOption[]>([]);
+  const [promoDates, setPromoDates] = useState<FilterOption[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [brand, setBrand] = useState("");
+  const [supermarket, setSupermarket] = useState("");
+  const [promoDate, setPromoDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -39,18 +45,24 @@ export default function Home() {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (brand) params.set("brand", brand);
+    if (supermarket) params.set("supermarket", supermarket);
+    if (promoDate) params.set("promo_dates", promoDate);
     params.set("page", page.toString());
     const res = await fetch(`/api/products?${params}`);
     const data = await res.json();
     setProducts(data.products);
     setTotal(data.total);
     setLoading(false);
-  }, [search, brand, page]);
+  }, [search, brand, supermarket, promoDate, page]);
 
   useEffect(() => {
-    fetch("/api/brands")
+    fetch("/api/filters")
       .then((r) => r.json())
-      .then(setBrands);
+      .then((data) => {
+        setBrands(data.brands);
+        setSupermarkets(data.supermarkets);
+        setPromoDates(data.promoDates);
+      });
   }, []);
 
   useEffect(() => {
@@ -71,12 +83,51 @@ export default function Home() {
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">VolkoPromo</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Supermarket Promotions</h1>
             <span className="text-sm text-gray-500">{total} products</span>
           </div>
 
           {/* Filters */}
           <div className="flex gap-3 flex-wrap">
+            <select
+              value={supermarket}
+              onChange={(e) => { setSupermarket(e.target.value); setPage(1); }}
+              className="px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All supermarkets</option>
+              {supermarkets.map((s) => (
+                <option key={s.supermarket} value={s.supermarket}>
+                  {s.supermarket} ({s.count})
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={promoDate}
+              onChange={(e) => { setPromoDate(e.target.value); setPage(1); }}
+              className="px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All date ranges</option>
+              {promoDates.map((d) => (
+                <option key={d.promo_dates} value={d.promo_dates}>
+                  {d.promo_dates} ({d.count})
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={brand}
+              onChange={(e) => { setBrand(e.target.value); setPage(1); }}
+              className="px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All brands</option>
+              {brands.map((b) => (
+                <option key={b.brand} value={b.brand}>
+                  {b.brand} ({b.count})
+                </option>
+              ))}
+            </select>
+
             <form onSubmit={handleSearch} className="flex gap-2 flex-1 min-w-[200px]">
               <input
                 type="text"
@@ -93,28 +144,14 @@ export default function Home() {
               </button>
             </form>
 
-            <select
-              value={brand}
-              onChange={(e) => {
-                setBrand(e.target.value);
-                setPage(1);
-              }}
-              className="px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All brands</option>
-              {brands.map((b) => (
-                <option key={b.brand} value={b.brand}>
-                  {b.brand} ({b.count})
-                </option>
-              ))}
-            </select>
-
-            {(search || brand) && (
+            {(search || brand || supermarket || promoDate) && (
               <button
                 onClick={() => {
                   setSearch("");
                   setSearchInput("");
                   setBrand("");
+                  setSupermarket("");
+                  setPromoDate("");
                   setPage(1);
                 }}
                 className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border rounded-lg"

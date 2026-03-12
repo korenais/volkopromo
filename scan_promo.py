@@ -29,7 +29,8 @@ def get_r2_client():
 def upload_image(r2_client, image_path: str, key: str) -> str:
     bucket = os.environ["R2_BUCKET_NAME"]
     public_url = os.environ["R2_PUBLIC_URL"]
-    r2_client.upload_file(image_path, bucket, key, ExtraArgs={"ContentType": "image/png"})
+    content_type = "image/jpeg" if key.endswith(".jpg") else "image/png"
+    r2_client.upload_file(image_path, bucket, key, ExtraArgs={"ContentType": content_type})
     return f"{public_url}/{key}"
 
 
@@ -42,18 +43,18 @@ def get_db():
 # ── Commands ───────────────────────────────────────────────────────
 
 def cmd_convert_pdf(pdf_path: str, output_dir: str, dpi: int = 200):
-    """Convert PDF to PNG images using pdftoppm."""
+    """Convert PDF to JPEG images using pdftoppm."""
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     import subprocess
     result = subprocess.run(
-        ["pdftoppm", "-png", "-r", str(dpi), pdf_path, f"{output_dir}/page"],
+        ["pdftoppm", "-jpeg", "-jpegopt", "quality=85", "-r", str(dpi), pdf_path, f"{output_dir}/page"],
         capture_output=True, text=True,
     )
     if result.returncode != 0:
         print(json.dumps({"error": result.stderr}))
         sys.exit(1)
     # List created files
-    pages = sorted(Path(output_dir).glob("page-*.png"))
+    pages = sorted(Path(output_dir).glob("page-*.jpg"))
     print(json.dumps({"pages": [str(p) for p in pages], "count": len(pages)}))
 
 

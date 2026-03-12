@@ -1,0 +1,12 @@
+ollama:
+  url: http://localhost:11434
+  model: llama3.1:8b
+  temperature: 0.1
+  timeout: 120
+
+google_sheets:
+  service_account_json: ../kortaliya/social_media/content-agent/credentials.json
+  spreadsheet_id: 18Iaa1OsRS9v0bcQrV5mR6QpG-82HYX5rDVgMJTmbbic
+
+pdf:
+  dpi: 300
